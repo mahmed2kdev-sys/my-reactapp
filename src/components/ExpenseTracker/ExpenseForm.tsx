@@ -1,17 +1,27 @@
-import { useForm } from "react-hook-form";
-import { categories } from "../../App";
+import { useForm, type FieldValues } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { categories } from "./categories";
 
-interface ExpenseFormValues {
-    name: string;
-    description: string;
-    amount: number;
-    categories: string;
-}
+const expenseSchema = z.object({
+    name: z.string().min(3, "Name must be at least 3 characters"),
+    description: z.string().min(3, "Description must be at least 3 characters"),
+    amount: z.coerce.number().min(0.01, "Amount must be greater than 0").max(1000000, "Amount must be at most 1000000"),
+    category: z.enum(categories, { error: "Category is required" }),
+});
+
+type ExpenseFormValues = z.infer<typeof expenseSchema>;
 
 function ExpenseForm() {
-    const { register, handleSubmit, formState: { errors } } = useForm<ExpenseFormValues>();
+    const { register, handleSubmit, formState: { errors } } = useForm<
+        z.input<typeof expenseSchema>,
+        any,
+        ExpenseFormValues
+    >({
+        resolver: zodResolver(expenseSchema),
+    });
 
-    const onSubmit = (data: ExpenseFormValues) => console.log(data);
+    const onSubmit = (data: FieldValues) => console.log(data);
 
     const errorClass = "border border-red-500 rounded px-3 py-2";
     const baseClass = "border border-gray-300 rounded px-3 py-2";
@@ -26,7 +36,7 @@ function ExpenseForm() {
                 type="text"
                 placeholder="Name"
                 className={errors.name ? errorClass : baseClass}
-                {...register("name", { required: "Name is required", minLength: { value: 3, message: "Name must be at least 3 characters" } })}
+                {...register("name")}
             />
             {errors.name && <span className="text-red-500 text-xs">{errors.name.message as string}</span>}
             
@@ -38,7 +48,7 @@ function ExpenseForm() {
                 type="text"
                 placeholder="Description"
                 className={errors.description ? errorClass : baseClass}
-                {...register("description", { required: "Description is required", minLength: { value: 3, message: "Description must be at least 3 characters" } })}
+                {...register("description")}
             />
             {errors.description && <span className="text-red-500 text-xs">{errors.description.message as string}</span>}
             <label htmlFor="amount" className="text-sm font-medium">
@@ -49,25 +59,25 @@ function ExpenseForm() {
                 type="number"
                 placeholder="Amount"
                 className={errors.amount ? errorClass : baseClass}
-                {...register("amount", { required: "Amount is required", min: { value: 0.01, message: "Amount must be greater than 0" }, max: { value: 1000000, message: "Amount must be at most 1000000" } })}
+                {...register("amount")}
             />
             {errors.amount && <span className="text-red-500 text-xs">{errors.amount.message as string}</span>}
-            <label htmlFor="categories" className="text-sm font-medium">
-                Categories
+            <label htmlFor="category" className="text-sm font-medium">
+                Category
             </label>
             <select
-                id="categories"
-                className={errors.categories ? errorClass : baseClass}
-                {...register("categories", { required: "Category is required" })}
+                id="category"
+                className={errors.category ? errorClass : baseClass}
+                {...register("category")}
             >
                 <option value="">Select a category</option>
                 {categories.map((c) => (
-                    <option key={c} value={c.toLowerCase()}>
+                    <option key={c} value={c}>
                         {c}
                     </option>
                 ))}
             </select>
-            {errors.categories && <span className="text-red-500 text-xs">{errors.categories.message as string}</span>}
+            {errors.category && <span className="text-red-500 text-xs">{errors.category.message as string}</span>}
             <button
                 type="submit"
                 className="bg-blue-600 text-white rounded px-3 py-2"

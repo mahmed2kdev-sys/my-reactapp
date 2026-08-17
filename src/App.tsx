@@ -4,8 +4,6 @@ import ExpenseFilter from "./components/ExpenseTracker/ExpenseFilter";
 import ExpenseList from "./components/ExpenseTracker/ExpenseList";
 import ExpenseForm from "./components/ExpenseTracker/ExpenseForm";
 
-export const categories = ["Food", "Fruits", "Transport", "Entertainment", "Utilities"];
-
 function App() {
 
   const [selectedCategory, setSelectedCategory] = useState('');
