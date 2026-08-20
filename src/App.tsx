@@ -2,7 +2,7 @@
 import { useState } from "react";
 import ExpenseFilter from "./components/ExpenseTracker/ExpenseFilter";
 import ExpenseList from "./components/ExpenseTracker/ExpenseList";
-import ExpenseForm from "./components/ExpenseTracker/ExpenseForm";
+import ExpenseForm, { type ExpenseFormData } from "./components/ExpenseTracker/ExpenseForm";
 
 function App() {
 
@@ -14,6 +14,13 @@ function App() {
     { id: 4, description: "Electricity bill", amount: 80, category: "Utilities" },
     { id: 5, description: "Coffee", amount: 5, category: "Food" },
   ]);
+
+  const handleSubmit = (data: ExpenseFormData) => {
+    setExpenseList([
+      ...expenseList,
+      { ...data, id: expenseList.length + 1},
+    ]);
+  };
   const handleDelete = (id: number) => {
     setExpenseList(expenseList.filter(expense => expense.id !== id));
   };
@@ -25,7 +32,7 @@ function App() {
   return (
     <>
       <div>
-        <ExpenseForm />
+        <ExpenseForm onSubmit={handleSubmit} />
         <ExpenseFilter onSelectCategory={(category) => setSelectedCategory(category)} />
         <ExpenseList expenses={visibleExpenses} onDelete={handleDelete} />
       </div>

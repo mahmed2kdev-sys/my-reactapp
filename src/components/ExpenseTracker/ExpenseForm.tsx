@@ -1,45 +1,39 @@
-import { useForm, type FieldValues } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { categories } from "./categories";
 
 const expenseSchema = z.object({
-    name: z.string().min(3, "Name must be at least 3 characters"),
     description: z.string().min(3, "Description must be at least 3 characters"),
-    amount: z.coerce.number().min(0.01, "Amount must be greater than 0").max(1000000, "Amount must be at most 1000000"),
+    amount: z.number().min(0.01, "Amount must be greater than 0").max(1000000, "Amount must be at most 1000000"),
     category: z.enum(categories, { error: "Category is required" }),
 });
 
-type ExpenseFormValues = z.infer<typeof expenseSchema>;
+export type ExpenseFormData = z.infer<typeof expenseSchema>;
 
-function ExpenseForm() {
-    const { register, handleSubmit, formState: { errors } } = useForm<
-        z.input<typeof expenseSchema>,
-        any,
-        ExpenseFormValues
+interface Props {
+    onSubmit: (data: ExpenseFormData) => void;
+}
+
+function ExpenseForm({ onSubmit }: Props) {
+    const { register, handleSubmit, reset, formState: { errors, isValid } } = useForm<
+        z.input<typeof expenseSchema>
     >({
         resolver: zodResolver(expenseSchema),
+        mode: "onChange",
     });
 
-    const onSubmit = (data: FieldValues) => console.log(data);
+    const submit = handleSubmit((data) => {
+        onSubmit(data);
+        reset();
+    });
 
     const errorClass = "border border-red-500 rounded px-3 py-2";
     const baseClass = "border border-gray-300 rounded px-3 py-2";
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 m-8 w-1/3">
-            <label htmlFor="name" className="text-sm font-medium">
-                Name
-            </label>
-            <input
-                id="name"
-                type="text"
-                placeholder="Name"
-                className={errors.name ? errorClass : baseClass}
-                {...register("name")}
-            />
-            {errors.name && <span className="text-red-500 text-xs">{errors.name.message as string}</span>}
-            
+        <form onSubmit={submit} className="flex flex-col gap-4 m-8 w-1/3">
+
             <label htmlFor="description" className="text-sm font-medium">
                 Description
             </label>
@@ -59,7 +53,7 @@ function ExpenseForm() {
                 type="number"
                 placeholder="Amount"
                 className={errors.amount ? errorClass : baseClass}
-                {...register("amount")}
+                {...register("amount", { valueAsNumber: true })}
             />
             {errors.amount && <span className="text-red-500 text-xs">{errors.amount.message as string}</span>}
             <label htmlFor="category" className="text-sm font-medium">
@@ -80,7 +74,8 @@ function ExpenseForm() {
             {errors.category && <span className="text-red-500 text-xs">{errors.category.message as string}</span>}
             <button
                 type="submit"
-                className="bg-blue-600 text-white rounded px-3 py-2"
+                disabled={!isValid}
+                className="bg-blue-600 text-white rounded px-3 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 Submit
             </button>
