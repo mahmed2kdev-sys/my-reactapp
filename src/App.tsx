@@ -1,8 +1,8 @@
 //import { useState } from "react";
 import { useState } from "react";
-import ExpenseFilter from "./components/ExpenseTracker/ExpenseFilter";
-import ExpenseList from "./components/ExpenseTracker/ExpenseList";
-import ExpenseForm, { type ExpenseFormData } from "./components/ExpenseTracker/ExpenseForm";
+import ExpenseFilter from "./ExpenseTracker/ExpenseFilter";
+import ExpenseList from "./ExpenseTracker/ExpenseList";
+import ExpenseForm, { type ExpenseFormData } from "./ExpenseTracker/ExpenseForm";
 
 function App() {
 
