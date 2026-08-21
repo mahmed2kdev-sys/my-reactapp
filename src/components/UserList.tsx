@@ -1,18 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { isCancel } from "axios";
-import { apiClient } from "../services/apiClient";
+import { type User } from "../services/UserService";
+import { useUsers } from "../hooks/useUsers";
 import Button from "./Button";
 import { FaEdit, FaTrash } from "react-icons/fa";
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  username: string;
-}
 
 const userSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -23,9 +16,7 @@ const userSchema = z.object({
 type UserFormData = z.infer<typeof userSchema>;
 
 function UserList() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { users, loading, error, addUser: addUserToStore, updateUser, deleteUser } = useUsers();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -36,14 +27,8 @@ function UserList() {
     formState: { errors },
   } = useForm<UserFormData>({ resolver: zodResolver(userSchema) });
 
-  const addUser = handleSubmit((data) => {
-    const newUser: User = {
-      id: Math.min(0, ...users.map((u) => u.id)) - 1,
-      name: data.name,
-      username: data.username,
-      email: data.email,
-    };
-    setUsers((prev) => [newUser, ...prev]);
+  const addUser = handleSubmit(async (data) => {
+    await addUserToStore(data);
     reset();
     setAdding(false);
   });
@@ -56,48 +41,21 @@ function UserList() {
   const saveEdit = handleSubmit(async (data) => {
     if (editingId === null) return;
     try {
-      const res = await apiClient.put<User>(`users/${editingId}`, { ...data });
-      setUsers((prev) =>
-        prev.map((u) => (u.id === editingId ? { ...u, ...res.data } : u))
-      );
+      await updateUser(editingId, { ...data });
     } catch {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === editingId
-            ? { ...u, name: data.name, username: data.username, email: data.email }
-            : u
-        )
-      );
+      // ponytail: updateUser already did optimistic local update
     }
     setEditingId(null);
     reset();
   });
 
-  const deleteUser = async (id: number) => {
-    try {
-      await apiClient.delete(`users/${id}`);
-    } catch {
-      // ponytail: mock API / offline — keep local delete
-    }
-    setUsers((prev) => prev.filter((u) => u.id !== id));
+  const handleDelete = async (id: number) => {
+    await deleteUser(id);
     if (editingId === id) {
       setEditingId(null);
       reset();
     }
   };
-
-  useEffect(() => {
-    const controller = new AbortController();
-    apiClient
-      .get<User[]>("users", { signal: controller.signal })
-      .then((res) => setUsers(res.data))
-      .catch((err) => {
-        if (isCancel(err)) return;
-        setError(err.message || "Failed to fetch users");
-      })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, []);
 
   if (loading) return <p className="mx-8">Loading users…</p>;
   if (error) return <p className="mx-8 text-red-500">{error}</p>;
@@ -165,7 +123,7 @@ function UserList() {
                   <button onClick={() => startEdit(user)} aria-label={`Edit ${user.name}`}>
                     <FaEdit className="text-blue-500 hover:text-blue-700" />
                   </button>
-                  <button onClick={() => deleteUser(user.id)} aria-label={`Delete ${user.name}`}>
+                  <button onClick={() => handleDelete(user.id)} aria-label={`Delete ${user.name}`}>
                     <FaTrash className="text-red-500 hover:text-red-700" />
                   </button>
                 </div>
